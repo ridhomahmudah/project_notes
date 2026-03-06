@@ -4,19 +4,25 @@ import '../controllers/theme_controller.dart';
 import '../services/theme.dart';
 
 class HomeView extends StatelessWidget {
+  // Gunakan Get.find karena ThemeController sudah di-put di main.dart
   final themeController = Get.find<ThemeController>();
+
+  HomeView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // Menggunakan Obx pada Scaffold agar warna background ikut berubah instan
+      backgroundColor: context.theme.scaffoldBackgroundColor,
       drawer: Drawer(
         child: Column(
           children: [
-            // Header Menu
-            DrawerHeader(
+            Obx(() => DrawerHeader(
               decoration: BoxDecoration(
-                color:
-                    Get.isDarkMode ? Themes.darkPrimary : Themes.lightPrimary,
+                // Menggunakan themeController.isDarkMode.value agar reaktif
+                color: themeController.isDarkMode.value 
+                    ? Themes.darkPrimary 
+                    : Themes.lightPrimary,
               ),
               child: const Center(
                 child: Text(
@@ -28,12 +34,11 @@ class HomeView extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
-            // Item Menu
+            )),
             ListTile(
               leading: const Icon(Icons.note),
               title: const Text("Semua Catatan"),
-              onTap: () => Get.back(), // Tutup menu
+              onTap: () => Get.back(),
             ),
             ListTile(
               leading: const Icon(Icons.category),
@@ -50,21 +55,22 @@ class HomeView extends StatelessWidget {
           ],
         ),
       ),
-      // -------------------------------
       appBar: AppBar(
         title: const Text("Amuba Notes"),
-        // Icon menu akan otomatis muncul di sebelah kiri title karena ada Drawer
         actions: [
           IconButton(
-            icon: Obx(
-              () => Image.asset(
-                themeController.isDarkMode.value
-                    ? 'assets/images/sun_icon.png'
-                    : 'assets/images/moon_icon.png',
-                width: 24, // Sesuaikan ukuran
-                height: 24,
-              ),
-            ),
+            // Obx di sini sudah benar untuk memantau perubahan icon
+            icon: Obx(() => Image.asset(
+                  themeController.isDarkMode.value
+                      ? 'assets/images/sun_icon.png'
+                      : 'assets/images/moon_icon.png',
+                  width: 24,
+                  height: 24,
+                  // Jika icon gambar tidak ada, gunakan icon bawaan flutter sebagai cadangan
+                  errorBuilder: (context, error, stackTrace) => Icon(
+                    themeController.isDarkMode.value ? Icons.light_mode : Icons.dark_mode,
+                  ),
+                )),
             onPressed: () => themeController.toggleTheme(),
           ),
         ],
@@ -84,23 +90,29 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _noteCard(String title, Color accentColor) {
-    return Card(
+    // Membungkus card dengan Obx agar warna card berubah saat toggle theme
+    return Obx(() => Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
-      // Background card menyesuaikan tema
-      color: Get.isDarkMode ? const Color(0xFF252526) : Colors.grey[50],
+      color: themeController.isDarkMode.value 
+          ? const Color(0xFF252526) 
+          : Colors.white,
       child: ListTile(
-        leading: Container(width: 4, color: accentColor),
+        leading: Container(width: 4, height: 40, color: accentColor),
         title: Text(
           title,
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            // Teks otomatis hitam di light, putih di dark sesuai ThemeData
-            color: Get.isDarkMode ? Colors.white : Colors.black,
+            color: themeController.isDarkMode.value ? Colors.white : Colors.black,
           ),
         ),
-        subtitle: const Text("Sentuh untuk melihat detail..."),
+        subtitle: Text(
+          "Sentuh untuk melihat detail...",
+          style: TextStyle(
+            color: themeController.isDarkMode.value ? Colors.white70 : Colors.black54,
+          ),
+        ),
       ),
-    );
+    ));
   }
 }

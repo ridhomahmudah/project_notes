@@ -1,19 +1,27 @@
 import 'package:get/get.dart';
 import '../views/splash_view.dart';
+import '../views/home_view.dart'; 
 import '../controllers/splash_controller.dart';
 
+abstract class Routes {
+  static const SPLASH = '/splash';
+  static const HOME = '/home';
+}
+
 class AppPages {
-  static const INITIAL = '/splash';
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
     GetPage(
-      name: '/splash',
+      name: Routes.SPLASH,
       page: () => const SplashView(),
       binding: BindingsBuilder(() {
         Get.put(SplashController());
       }),
     ),
-    // Tambahkan route Home nanti di sini
-    // GetPage(name: '/home', page: () => HomeView()), 
+    GetPage(
+      name: Routes.HOME,
+      page: () => HomeView(), // Hapus 'const' karena HomeView menggunakan Get.find
+    ),
   ];
 }

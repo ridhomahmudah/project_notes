@@ -1,30 +1,21 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
-
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-
+import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:amuba_notes/main.dart';
+import 'package:amuba_notes/controllers/theme_controller.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  testWidgets('Amuba Notes Splash Load Test', (WidgetTester tester) async {
+    // 1. Inisialisasi GetStorage untuk testing
+    GetStorage.init();
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    // 2. Inject ThemeController yang dibutuhkan MyApp
+    final themeController = Get.put(ThemeController());
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
+    // 3. Build app dan masukkan themeController sebagai argumen
+    await tester.pumpWidget(MyApp(themeController: themeController));
 
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    // 4. Verifikasi apakah teks Splash muncul (contoh: Nama Aplikasi)
+    expect(find.text('AMUBA Notes'), findsOneWidget);
   });
 }
