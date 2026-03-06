@@ -2,10 +2,12 @@ import 'package:get/get.dart';
 import '../views/splash_view.dart';
 import '../views/home_view.dart'; 
 import '../controllers/splash_controller.dart';
+import '../views/onboarding_view.dart';
 
 abstract class Routes {
   static const SPLASH = '/splash';
   static const HOME = '/home';
+  static const ONBOARDING = '/onboarding';
 }
 
 class AppPages {
@@ -21,7 +23,12 @@ class AppPages {
     ),
     GetPage(
       name: Routes.HOME,
-      page: () => HomeView(), // Hapus 'const' karena HomeView menggunakan Get.find
+      page: () => HomeView(), 
+    ),
+
+    GetPage(
+      name: Routes.ONBOARDING,
+      page: () => const OnboardingView(),
     ),
   ];
 }

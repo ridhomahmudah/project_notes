@@ -8,9 +8,8 @@ class SplashController extends GetxController {
   }
 
   void _startTimer() async {
-    // Delay 3 detik sesuai standar Splash Screen
     await Future.delayed(const Duration(seconds: 3));
     // Pindah ke halaman utama dan hapus Splash dari stack
-    Get.offAllNamed('/home'); 
+    Get.offAllNamed('/onboarding'); // Ganti dengan nama route yang benar untuk onboarding
   }
 }
