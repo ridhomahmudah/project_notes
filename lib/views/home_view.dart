@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:amuba_notes/controllers/home_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -21,6 +23,7 @@ class HomeView extends StatelessWidget {
             offset: const Offset(0, 45),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(15),
+              
             ),
             color:
                 themeController.isDarkMode.value
@@ -115,7 +118,8 @@ class HomeView extends StatelessWidget {
               _categorySort(),
 
               const SizedBox(height: 16),
-              // ListView catatan di bawahnya...
+
+              Expanded(child: _buildNotesList()),
             ],
           ),
         ),
@@ -308,6 +312,259 @@ class HomeView extends StatelessWidget {
           }),
         ],
       ),
+    );
+  }
+
+  Widget _buildNotesList() {
+    // Contoh data dummy, nanti bisa kamu ganti dengan data dari controller
+    return GridView.builder(
+      itemCount: 4, // Ganti dengan homeController.notes.length
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, // Menampilkan 2 kolom kesamping
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.9, // Atur tinggi rendahnya bubble
+      ),
+      itemBuilder: (context, index) {
+        return _bubbleNoteItem(
+          title: "Judul Catatan $index",
+          content: "Ini adalah isi catatan yang sangat rahasia dan penting...",
+          date: "24 Mei 2024",
+        );
+      },
+    );
+  }
+
+  Widget _bubbleNoteItem({
+    required String title,
+    required String content,
+    required String date,
+    bool isPreview = false,
+  }) {
+    bool isDark = themeController.isDarkMode.value;
+
+    return GestureDetector(
+      // KETIKA DIKLIK TAHAN
+      onLongPress: () {
+        _showNotePreview(
+          Get.context!,
+          title: title,
+          content: content,
+          date: date,
+        );
+      },
+      onTap: () {
+        print("Buka detail catatan");
+      },
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          // Warna bubble: agak terang di dark mode, putih bersih di light mode
+          color: isDark ? Themes.darkPrimary : Themes.amubaGrey,
+          borderRadius: BorderRadius.circular(20), // Membuat bubble membulat
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(
+            color: isDark ? Colors.white10 : Colors.grey.withOpacity(0.1),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: GoogleFonts.montserrat(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: isDark ? Colors.white : Colors.black,
+              ),
+            ),
+            const SizedBox(height: 8),
+            isPreview 
+          ? Text(
+              content,
+              style: GoogleFonts.montserrat(
+                fontSize: 14,
+                color: isDark ? Colors.white70 : Colors.black54,
+              ),
+            )
+          : Expanded( 
+              child: Text(
+                content,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.montserrat(
+                  fontSize: 13,
+                  color: isDark ? Colors.white70 : Colors.black54,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                // Warna background date: kuning amuba untuk light, abu-abu gelap untuk dark
+                color: Themes.amubaRed,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                date,
+                style: GoogleFonts.montserrat(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  // Warna teks date menyesuaikan tema
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showNotePreview(
+    BuildContext context, {
+    required String title,
+    required String content,
+    required String date,
+  }) {
+    bool isDark = themeController.isDarkMode.value;
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => Scaffold(
+            backgroundColor: Colors.transparent,
+            body: Stack(
+              children: [
+                // 1. Efek Blur Background
+                GestureDetector(
+                  onTap: () => Get.back(),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 2, sigmaY: 2),
+                    child: Container(color: Colors.black.withOpacity(0.5)),
+                  ),
+                ),
+
+                // 2. Konten Bubble di Pinggir Kiri
+                Align(
+                  alignment:
+                      Alignment
+                          .centerLeft, // UBAH: dari centerRight ke centerLeft
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16), 
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment:
+                          CrossAxisAlignment
+                              .start, // UBAH: konten di dalam column rata kiri
+                      children: [
+                        // Tampilan Bubble Besar
+                        Container(
+                          width: double.infinity,
+                          child: IntrinsicHeight(
+                            child: _bubbleNoteItem(
+                              title: title,
+                              content: content,
+                              date: date,
+                              isPreview: true,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // 3. Menu di Bawah Bubble (Rata kiri juga)
+                        Container(
+                          width: MediaQuery.of(context).size.width * 0.65,
+                          decoration: BoxDecoration(
+                            color: isDark ? Themes.darkPrimary : Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              _buildMenuItem(Icons.list, "Add to List", () {}),
+                              const Divider(
+                                height: 1,
+                                indent: 15,
+                                endIndent: 15,
+                              ),
+                              _buildMenuItem(
+                                Icons.download,
+                                "Download ZIP",
+                                () {},
+                              ),
+                              const Divider(
+                                height: 1,
+                                indent: 15,
+                                endIndent: 15,
+                              ),
+                              _buildMenuItem(
+                                Icons.delete_outline,
+                                "Delete Note",
+                                () {},
+                                customColor: Colors.redAccent,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+    );
+  }
+
+  Widget _buildMenuItem(
+    IconData icon,
+    String text,
+    VoidCallback onTap, {
+    Color? customColor,
+  }) {
+    bool isDark = themeController.isDarkMode.value;
+
+    // PERBAIKAN: Warna teks/icon harus kontras dengan background menu
+    // Jika Dark Mode (bg menu gelap), maka teks harus putih. Begitu sebaliknya.
+    Color contentColor = isDark ? Colors.white : Colors.black87;
+
+    return ListTile(
+      leading: Icon(
+        icon,
+        // Gunakan customColor jika ada (misal merah untuk hapus), jika tidak gunakan contentColor
+        color: customColor ?? contentColor,
+        size: 22,
+      ),
+      title: Text(
+        text,
+        style: GoogleFonts.montserrat(
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
+          color: customColor ?? contentColor,
+        ),
+      ),
+      onTap: () {
+        Get.back(); // Menutup dialog
+        onTap(); // Menjalankan fungsi
+      },
     );
   }
 }
