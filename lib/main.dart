@@ -1,3 +1,4 @@
+import 'package:amuba_notes/services/db_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
@@ -6,11 +7,9 @@ import 'package:amuba_notes/routes/app_pages.dart';
 import 'package:amuba_notes/services/theme.dart';
 
 void main() async {
-  // 1. Inisialisasi wajib Flutter & GetStorage
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
-
-  // 2. Inject ThemeController agar bisa dipakai di GetMaterialApp
+  await DBHelper.initDb(); // Inisialisasi database sebelum runApp
   final themeController = Get.put(ThemeController());
 
   runApp(MyApp(themeController: themeController));
