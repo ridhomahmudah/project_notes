@@ -1,4 +1,5 @@
 import 'package:amuba_notes/controllers/home_controller.dart';
+import 'package:amuba_notes/routes/app_pages.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -120,22 +121,21 @@ class HomeView extends StatelessWidget {
           ),
         ),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 30.0, right: 10.0),
+          padding: const EdgeInsets.all(30.0), // Sesuaikan padding
           child: SizedBox(
-            width: 70, // Tentukan lebar (default biasanya sekitar 56)
-            height: 70, // Tentukan tinggi
+            width: 70,
+            height: 70,
             child: FloatingActionButton(
               onPressed: () {
-                print("Tambah Catatan Baru");
+                // HAPUS: print("Tambah Catatan Baru");
+                // GANTI DENGAN INI:
+                Get.toNamed(Routes.ADD_NOTE);
               },
               backgroundColor:
                   themeController.isDarkMode.value
                       ? Themes.darkPrimary
                       : Themes.lightPrimary,
-              elevation:
-                  6, // Tambah elevation agar bayangannya lebih terasa saat besar
               shape: const CircleBorder(),
-              // Jangan lupa perbesar juga ukuran Icon-nya
               child: const Icon(Icons.add, size: 30, color: Colors.white),
             ),
           ),
@@ -289,8 +289,7 @@ class HomeView extends StatelessWidget {
             bool isDark = themeController.isDarkMode.value;
             return GestureDetector(
               onTap: () {
-                // Aksi tambah kategori (misal: munculkan dialog input)
-                print("Tambah Kategori Baru");
+                print("Dialog Tambah Kategori Baru");
               },
               child: Container(
                 padding: const EdgeInsets.all(8),

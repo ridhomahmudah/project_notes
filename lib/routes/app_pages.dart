@@ -3,6 +3,7 @@ import '../views/splash_view.dart';
 import '../views/home_view.dart'; 
 import '../controllers/splash_controller.dart';
 import '../views/onboarding_view.dart';
+import '../views/add_note_view.dart';
 
 abstract class Routes {
   static const SPLASH = '/splash';
@@ -30,6 +31,11 @@ class AppPages {
     GetPage(
       name: Routes.ONBOARDING,
       page: () => const OnboardingView(),
+    ),
+
+    GetPage(
+      name: Routes.ADD_NOTE,
+      page: () => AddNoteView(),
     ),
   ];
 }
