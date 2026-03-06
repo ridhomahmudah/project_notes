@@ -22,7 +22,7 @@ class ThemeController extends GetxController {
   bool _loadThemeFromBox() => _box.read(_key) ?? false;
 
   void toggleTheme() {
-    if (Get.isDarkMode) {
+    if (isDarkMode.value) {
       Get.changeThemeMode(ThemeMode.light);
       _saveThemeToBox(false);
       isDarkMode.value = false; // 3. Update nilai reaktifnya

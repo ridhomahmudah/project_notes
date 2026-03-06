@@ -5,7 +5,7 @@ class Themes {
   static const Color darkBg = Color(0xFF19191A);
   static const Color lightPrimary = Color(0xFF281608);
   static const Color darkPrimary = Color(0xFF626265);
-  
+
   // Warna Aksen untuk Kategori Catatan
   static const Color amubaYellow = Color(0xFFF9EEE2);
   static const Color amubaRed = Color(0xFFE53935);
@@ -13,31 +13,36 @@ class Themes {
   static const Color amubaBlue = Color(0xFF1E88E5);
   static const Color amubaGreen = Color(0xFF43A047);
 
-  // TEMA TERANG
+// TEMA TERANG
   static final light = ThemeData.light().copyWith(
+    useMaterial3: true, // Pastikan ini aktif jika pakai Flutter terbaru
     primaryColor: lightPrimary,
     scaffoldBackgroundColor: Colors.white,
     appBarTheme: const AppBarTheme(
       backgroundColor: lightPrimary,
       foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      // PENTING: Matikan tint agar warna lightPrimary tidak pudar/putih
+      surfaceTintColor: Colors.transparent, 
     ),
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.black),
-      bodyMedium: TextStyle(color: Colors.black),
-    ),
+    // Tambahan: Warna icon agar konsisten
+    iconTheme: const IconThemeData(color: lightPrimary),
   );
 
   // TEMA GELAP
   static final dark = ThemeData.dark().copyWith(
+    useMaterial3: true,
     primaryColor: darkPrimary,
     scaffoldBackgroundColor: darkBg,
     appBarTheme: const AppBarTheme(
       backgroundColor: darkPrimary,
       foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      // PENTING: Matikan tint agar warna darkPrimary keluar sempurna
+      surfaceTintColor: Colors.transparent, 
     ),
-    textTheme: const TextTheme(
-      bodyLarge: TextStyle(color: Colors.white),
-      bodyMedium: TextStyle(color: Colors.white),
-    ),
+    iconTheme: const IconThemeData(color: Colors.white),
   );
 }
