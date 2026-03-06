@@ -8,6 +8,7 @@ abstract class Routes {
   static const SPLASH = '/splash';
   static const HOME = '/home';
   static const ONBOARDING = '/onboarding';
+  static const ADD_NOTE = '/add-note';
 }
 
 class AppPages {
