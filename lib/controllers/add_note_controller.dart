@@ -7,6 +7,7 @@ import '../services/db_helper.dart';
 
 class AddNoteController extends GetxController {
   // --- TAMBAHKAN DUA BARIS INI ---
+  int? currentId;
   final titleController = TextEditingController();
   final noteController = TextEditingController();
 
@@ -50,10 +51,12 @@ class AddNoteController extends GetxController {
       'imagePath': selectedImagePath.value,
     };
 
-    await DBHelper.insert(noteData);
-    Get.back(); // Kembali ke home
-    Get.snackbar("Sukses", "Catatan berhasil disimpan");
-  }
+    if (currentId == null) {
+      await DBHelper.insert(noteData);
+    } else {
+      // Pastikan DBHelper punya fungsi update
+      await DBHelper.update(currentId!, noteData); 
+    }
 
   @override
   void onClose() {
@@ -62,4 +65,5 @@ class AddNoteController extends GetxController {
     noteController.dispose();
     super.onClose();
   }
+}
 }

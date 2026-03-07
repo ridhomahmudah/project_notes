@@ -135,7 +135,7 @@ class HomeView extends StatelessWidget {
           ),
         ),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.all(30.0),
+          padding: const EdgeInsets.all(20.0),
           child: SizedBox(
             width: 70,
             height: 70,
