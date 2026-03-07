@@ -1,34 +1,62 @@
+import 'package:amuba_notes/services/db_helper.dart';
 import 'package:get/get.dart';
+import 'package:flutter/material.dart';
 
 class HomeController extends GetxController {
   final List<String> months = [
     "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
   ];
 
-  // Index bulan sekarang (0-11)
   var currentMonthIndex = 0.obs;
+  // Ini adalah data asli dari database
+  var notesList = <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    // SET KE BULAN SEKARANG SAAT APP DIBUKA
     currentMonthIndex.value = DateTime.now().month - 1;
+    // WAJIB panggil getNotes saat init agar data muncul saat aplikasi dibuka
+    getNotes(); 
   }
 
-  void nextMonth() {
-    if (isSelectionMode.value) return; // Kunci jika sedang memilih
-    currentMonthIndex.value = (currentMonthIndex.value + 1) % 12;
+  // --- LOGIKA DATABASE ---
+  
+  void getNotes() async {
+    // Mengambil data terbaru dari SQLite
+    List<Map<String, dynamic>> notes = await DBHelper.query();
+    notesList.assignAll(notes); 
+    print("Data dimuat: ${notesList.length} catatan");
   }
+
+  // Hapus satu catatan (Swipe atau Long Press)
+  void deleteNote(int id) async {
+    await DBHelper.delete(id); 
+    getNotes(); // Refresh list setelah hapus
+  }
+
+  // --- LOGIKA BULAN ---
+
+  void nextMonth() {
+    if (currentMonthIndex.value < months.length - 1) {
+      currentMonthIndex.value++;
+    } else {
+      currentMonthIndex.value = 0; 
+    }
+  }
+
   void prevMonth() {
-    if (isSelectionMode.value) return; // Kunci jika sedang memilih
-    currentMonthIndex.value = (currentMonthIndex.value - 1 + 12) % 12;
+    if (currentMonthIndex.value > 0) {
+      currentMonthIndex.value--;
+    } else {
+      currentMonthIndex.value = months.length - 1;
+    }
   }
 
   String get currentMonthName => months[currentMonthIndex.value];
 
   // --- LOGIKA KATEGORI ---
-  // Gunakan .obs pada List agar UI reaktif saat menambah/menghapus item
+  
   var categories = <String>["Semua"].obs;
   var selectedCategory = "Semua".obs;
 
@@ -49,56 +77,64 @@ class HomeController extends GetxController {
     }
   }
 
-  // --- LOGIKA SELEKSI & CATATAN ---
-  var isSelectionMode = false.obs;
-  var selectedNotes = <int>[].obs; 
+  // --- LOGIKA SELEKSI (MULTIPLE DELETE) ---
   
-  // Dummy total item untuk simulasi Select All (Ganti dengan length list catatan asli Anda nanti)
-  int get totalNotesCount => 10; 
+  var isSelectionMode = false.obs;
+  // Simpan ID dari database, bukan index List, agar lebih akurat saat hapus
+  var selectedNoteIds = <int>[].obs; 
 
   void toggleSelectionMode() {
     isSelectionMode.value = !isSelectionMode.value;
     if (!isSelectionMode.value) {
-      selectedNotes.clear();
+      selectedNoteIds.clear();
     }
   }
 
-  void toggleNoteSelection(int index) {
-    if (selectedNotes.contains(index)) {
-      selectedNotes.remove(index);
+  void toggleNoteSelection(int id) {
+    if (selectedNoteIds.contains(id)) {
+      selectedNoteIds.remove(id);
     } else {
-      selectedNotes.add(index);
+      selectedNoteIds.add(id);
     }
-    
-    // Otomatis matikan mode seleksi jika tidak ada lagi yang terpilih
-    if (selectedNotes.isEmpty) isSelectionMode.value = false;
+
+    if (selectedNoteIds.isEmpty) isSelectionMode.value = false;
   }
 
-  // Fitur Select All
+  // Fitur Select All (Mengikuti jumlah data di database)
   void selectAll() {
-    if (selectedNotes.length == totalNotesCount) {
-      selectedNotes.clear();
+    if (selectedNoteIds.length == notesList.length) {
+      selectedNoteIds.clear();
       isSelectionMode.value = false;
     } else {
-      selectedNotes.assignAll(List.generate(totalNotesCount, (index) => index));
+      // Ambil semua ID dari notesList
+      selectedNoteIds.assignAll(notesList.map((e) => e['id'] as int).toList());
+      isSelectionMode.value = true;
     }
   }
 
-  // Fitur Hapus Catatan
-  void deleteSelectedNotes() {
-    // Logika hapus data dari database/list asli Anda di sini
-    print("Menghapus index: $selectedNotes");
-    
-    // Reset state setelah hapus
-    selectedNotes.clear();
+  // Fitur Hapus Massal dari SQLite
+  void deleteSelectedNotes() async {
+    if (selectedNoteIds.isEmpty) return;
+
+    for (int id in selectedNoteIds) {
+      await DBHelper.delete(id); // Hapus satu-satu berdasarkan ID yang dipilih
+    }
+
+    // Reset state
+    selectedNoteIds.clear();
     isSelectionMode.value = false;
     
+    // Tarik data terbaru
+    getNotes();
+
     Get.snackbar(
-      "Berhasil", 
-      "Catatan yang dipilih telah dihapus",
+      "Berhasil",
+      "Catatan telah dibersihkan",
       snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
     );
   }
 
-  bool isNoteSelected(int index) => selectedNotes.contains(index);
+  bool isNoteSelected(int id) => selectedNoteIds.contains(id);
 }

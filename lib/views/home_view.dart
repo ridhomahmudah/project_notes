@@ -69,7 +69,7 @@ class HomeView extends StatelessWidget {
           ),
           title: Text(
             homeController.isSelectionMode.value
-                ? "${homeController.selectedNotes.length} Selected" // Ganti dengan variabel list seleksi Anda
+                ? "${homeController.selectedNoteIds.length} Selected"
                 : "AMUBA Notes",
             style: GoogleFonts.montserrat(
               fontSize: 24,
@@ -126,15 +126,16 @@ class HomeView extends StatelessWidget {
           ),
         ),
         floatingActionButton: Padding(
-          padding: const EdgeInsets.all(30.0), // Sesuaikan padding
+          padding: const EdgeInsets.all(30.0),
           child: SizedBox(
             width: 70,
             height: 70,
             child: FloatingActionButton(
-              onPressed: () {
-                // HAPUS: print("Tambah Catatan Baru");
-                // GANTI DENGAN INI:
-                Get.toNamed(Routes.ADD_NOTE);
+              onPressed: () async {
+                // Tunggu user selesai di halaman tambah [cite: 24, 25]
+                await Get.toNamed(Routes.ADD_NOTE);
+                // Refresh data di halaman home [cite: 21]
+                homeController.getNotes();
               },
               backgroundColor:
                   themeController.isDarkMode.value
@@ -175,7 +176,11 @@ class HomeView extends StatelessWidget {
                 // Tombol Select All
                 TextButton.icon(
                   onPressed: () => homeController.selectAll(),
-                  icon: Icon(Icons.select_all, color: Themes.lightPrimary, size: 40),
+                  icon: Icon(
+                    Icons.select_all,
+                    color: Themes.lightPrimary,
+                    size: 40,
+                  ),
                   label: Text(
                     "Select All",
                     style: GoogleFonts.montserrat(
@@ -502,28 +507,42 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _buildNotesList() {
-    // Contoh data dummy, nanti bisa kamu ganti dengan data dari controller
-    return GridView.builder(
-      itemCount: 10, // Ganti dengan homeController.notes.length
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2, // Menampilkan 2 kolom kesamping
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 0.9, // Atur tinggi rendahnya bubble
-      ),
-      itemBuilder: (context, index) {
-        return _bubbleNoteItem(
-          index: index,
-          title: "Judul Catatan $index",
-          content: "Ini adalah isi catatan yang sangat rahasia dan penting...",
-          date: "24 Mei 2024",
+    return Obx(() {
+      // Tampilkan pesan jika data kosong
+      if (homeController.notesList.isEmpty) {
+        return Center(
+          child: Text(
+            "Belum ada catatan di bulan ${homeController.currentMonthName}",
+            style: GoogleFonts.montserrat(color: Colors.grey),
+          ),
         );
-      },
-    );
+      }
+
+      return GridView.builder(
+        itemCount: homeController.notesList.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 0.9,
+        ),
+        itemBuilder: (context, index) {
+          // Ambil data dari Map SQLite [cite: 89]
+          final note = homeController.notesList[index];
+          return _bubbleNoteItem(
+            // Gunakan ID unik dari database, bukan index loop [cite: 91]
+            id: note['id'],
+            title: note['title'] ?? "Tanpa Judul",
+            content: note['note'] ?? "",
+            date: note['date'] ?? "",
+          );
+        },
+      );
+    });
   }
 
   Widget _bubbleNoteItem({
-    int? index,
+    required int id, // Ubah dari index ke id
     required String title,
     required String content,
     required String date,
@@ -532,27 +551,20 @@ class HomeView extends StatelessWidget {
     bool isDark = themeController.isDarkMode.value;
 
     return Obx(() {
-      bool isSelected =
-          (index != null) ? homeController.isNoteSelected(index) : false;
+      // Cek seleksi berdasarkan ID unik [cite: 91, 116]
+      bool isSelected = homeController.isNoteSelected(id);
       bool selectionMode = homeController.isSelectionMode.value;
 
       return GestureDetector(
         onLongPress:
-            selectionMode
-                ? null
-                : () {
-                  _showNotePreview(
-                    Get.context!,
-                    title: title,
-                    content: content,
-                    date: date,
-                  );
-                },
+            selectionMode ? null : () => homeController.toggleSelectionMode(),
         onTap: () {
           if (selectionMode) {
-            homeController.toggleNoteSelection(index!);
+            // Toggle seleksi menggunakan ID [cite: 94]
+            homeController.toggleNoteSelection(id);
           } else {
-            print("Buka detail catatan");
+            // Logika buka detail
+            print("Buka detail catatan ID: $id");
           }
         },
         child: Stack(
@@ -594,7 +606,6 @@ class HomeView extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  // Menggunakan Flexible agar tidak overflow di dalam GridView
                   Flexible(
                     child: Text(
                       content,
@@ -628,7 +639,7 @@ class HomeView extends StatelessWidget {
                 ],
               ),
             ),
-            // PERBAIKAN: Menggunakan Positioned, bukan PositionContainer
+            // Ikon centang saat mode seleksi [cite: 111, 114]
             if (selectionMode)
               Positioned(
                 right: 8,
@@ -644,12 +655,11 @@ class HomeView extends StatelessWidget {
                   size: 24,
                 ),
               ),
-
             if (isSelected)
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25), // Hitam transparan
+                    color: Colors.black.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(20),
                   ),
                 ),
@@ -702,6 +712,7 @@ class HomeView extends StatelessWidget {
                           width: double.infinity,
                           child: IntrinsicHeight(
                             child: _bubbleNoteItem(
+                              id: 0,
                               title: title,
                               content: content,
                               date: date,

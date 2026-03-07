@@ -19,7 +19,7 @@ class DBHelper {
             "CREATE TABLE $_tableName("
             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
             "title STRING, note TEXT, date STRING, "
-            "imagePath TEXT)", 
+            "imagePath TEXT)",
           );
         },
       );
@@ -36,5 +36,9 @@ class DBHelper {
   // Fungsi Ambil Semua Catatan
   static Future<List<Map<String, dynamic>>> query() async {
     return await _db!.query(_tableName);
+  }
+
+  static Future<int> delete(int id) async {
+    return await _db!.delete(_tableName, where: 'id = ?', whereArgs: [id]);
   }
 }
