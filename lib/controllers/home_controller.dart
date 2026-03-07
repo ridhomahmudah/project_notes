@@ -1,11 +1,22 @@
 import 'package:amuba_notes/services/db_helper.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class HomeController extends GetxController {
   final List<String> months = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
+    "Januari",
+    "Februari",
+    "Maret",
+    "April",
+    "Mei",
+    "Juni",
+    "Juli",
+    "Agustus",
+    "September",
+    "Oktober",
+    "November",
+    "Desember",
   ];
 
   var currentMonthIndex = 0.obs;
@@ -17,35 +28,42 @@ class HomeController extends GetxController {
     super.onInit();
     currentMonthIndex.value = DateTime.now().month - 1;
     // WAJIB panggil getNotes saat init agar data muncul saat aplikasi dibuka
-    getNotes(); 
+    getNotes();
+
+    loadCategories();
   }
 
   // --- LOGIKA DATABASE ---
-  
+
   void getNotes() async {
     // Mengambil data terbaru dari SQLite
     List<Map<String, dynamic>> notes = await DBHelper.query();
-    notesList.assignAll(notes); 
+    notesList.assignAll(notes);
     print("Data dimuat: ${notesList.length} catatan");
+    if (notes.isNotEmpty) {
+      print("Contoh format tanggal dari DB: ${notes[0]['date']}");
+    }
   }
 
   // Hapus satu catatan (Swipe atau Long Press)
   void deleteNote(int id) async {
-    await DBHelper.delete(id); 
+    await DBHelper.delete(id);
     getNotes(); // Refresh list setelah hapus
   }
 
   // --- LOGIKA BULAN ---
 
   void nextMonth() {
+    searchQuery.value = ""; // Reset search saat ganti bulan
     if (currentMonthIndex.value < months.length - 1) {
       currentMonthIndex.value++;
     } else {
-      currentMonthIndex.value = 0; 
+      currentMonthIndex.value = 0;
     }
   }
 
   void prevMonth() {
+    searchQuery.value = ""; // Reset search saat ganti bulan
     if (currentMonthIndex.value > 0) {
       currentMonthIndex.value--;
     } else {
@@ -56,7 +74,7 @@ class HomeController extends GetxController {
   String get currentMonthName => months[currentMonthIndex.value];
 
   // --- LOGIKA KATEGORI ---
-  
+
   var categories = <String>["Semua"].obs;
   var selectedCategory = "Semua".obs;
 
@@ -64,9 +82,21 @@ class HomeController extends GetxController {
     selectedCategory.value = category;
   }
 
-  void addCategory(String name) {
+  void loadCategories() async {
+    List<Map<String, dynamic>> data = await DBHelper.getCategories();
+    if (data.isNotEmpty) {
+      // Ubah Map ke List<String>
+      categories.assignAll(data.map((e) => e['name'].toString()).toList());
+    } else {
+      categories.assignAll(["Semua"]);
+    }
+  }
+
+  // Tambah kategori dan simpan ke DB
+  void addCategory(String name) async {
     if (name.isNotEmpty && !categories.contains(name)) {
-      categories.add(name);
+      await DBHelper.insertCategory(name); // Simpan ke SQLite
+      loadCategories(); // Refresh list
     }
   }
 
@@ -78,10 +108,10 @@ class HomeController extends GetxController {
   }
 
   // --- LOGIKA SELEKSI (MULTIPLE DELETE) ---
-  
+
   var isSelectionMode = false.obs;
   // Simpan ID dari database, bukan index List, agar lebih akurat saat hapus
-  var selectedNoteIds = <int>[].obs; 
+  var selectedNoteIds = <int>[].obs;
 
   void toggleSelectionMode() {
     isSelectionMode.value = !isSelectionMode.value;
@@ -123,7 +153,7 @@ class HomeController extends GetxController {
     // Reset state
     selectedNoteIds.clear();
     isSelectionMode.value = false;
-    
+
     // Tarik data terbaru
     getNotes();
 
@@ -137,4 +167,53 @@ class HomeController extends GetxController {
   }
 
   bool isNoteSelected(int id) => selectedNoteIds.contains(id);
+
+  // SEARCH
+  var searchQuery = "".obs;
+
+  // --- LOGIKA FILTER (BULAN SEBAGAI FILTER UTAMA) ---
+
+  List<Map<String, dynamic>> get filteredNotes {
+    // TAHAP 1: FILTER BULAN (Filter Utama)
+    List<Map<String, dynamic>> step1 =
+        notesList.where((note) {
+          try {
+            String dateStr = note['date'].toString();
+            DateFormat inputFormat = DateFormat("dd MMMM yyyy, hh:mm a");
+            DateTime noteDate = inputFormat.parse(dateStr);
+            return noteDate.month == (currentMonthIndex.value + 1);
+          } catch (e) {
+            return false;
+          }
+        }).toList();
+
+    // TAHAP 2: FILTER KATEGORI
+    List<Map<String, dynamic>> step2;
+    if (selectedCategory.value == "Semua") {
+      // Jika pilih "Semua", jangan filter apa-apa, ambil hasil dari step 1
+      step2 = step1;
+    } else {
+      // Jika pilih kategori spesifik (misal: 'Favorit'), saring yang cocok saja
+      step2 =
+          step1.where((note) {
+            return note['category'] == selectedCategory.value;
+          }).toList();
+    }
+
+    // TAHAP 3: FILTER SEARCH
+    if (searchQuery.value.isEmpty) {
+      return step2;
+    } else {
+      return step2.where((note) {
+        final title = note['title']?.toString().toLowerCase() ?? "";
+        final content = note['note']?.toString().toLowerCase() ?? "";
+        final query = searchQuery.value.toLowerCase();
+        return title.contains(query) || content.contains(query);
+      }).toList();
+    }
+  }
+
+  void updateSearchQuery(String query) {
+    searchQuery.value = query;
+  }
 }
