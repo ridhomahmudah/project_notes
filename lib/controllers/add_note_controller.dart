@@ -11,6 +11,7 @@ class AddNoteController extends GetxController {
   final noteController = TextEditingController();
 
   var selectedImagePath = ''.obs;
+  var searchText = ''.obs;
 
   // Fungsi ambil gambar
   Future<void> pickImage() async {
@@ -19,6 +20,10 @@ class AddNoteController extends GetxController {
     if (image != null) {
       selectedImagePath.value = image.path;
     }
+  }
+
+  void setSearchText(String text) {
+    searchText.value = text;
   }
 
   // Fungsi simpan ke database
