@@ -101,7 +101,25 @@ class DBHelper {
     );
   }
 
+  static Future<int> updateNoteCategory(int id, String categoryName) async {
+    return await _db!.update(
+      _tableName,
+      {'category': categoryName},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   static Future<int> deleteCategory(String name) async {
     return await _db!.delete(_catTable, where: 'name = ?', whereArgs: [name]);
+  }
+
+  static Future<int> update(int id, Map<String, dynamic> row) async {
+    return await _db!.update(
+      _tableName,
+      row,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

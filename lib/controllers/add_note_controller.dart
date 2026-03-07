@@ -7,6 +7,11 @@ import '../services/db_helper.dart';
 import '../models/note_model.dart';
 
 class AddNoteController extends GetxController {
+<<<<<<< HEAD
+=======
+  // --- TAMBAHKAN DUA BARIS INI ---
+  int? currentId;
+>>>>>>> 12943b92d335b3982a9ede8bc4e36113d727909c
   final titleController = TextEditingController();
   final noteController = TextEditingController();
 
@@ -106,6 +111,7 @@ class AddNoteController extends GetxController {
       }
     }
 
+<<<<<<< HEAD
     // 4. Proses ID lampiran menjadi String untuk disimpan di kolom attachedIds
     String? attachedIdsString =
         attachedNotes.isEmpty
@@ -160,6 +166,14 @@ class AddNoteController extends GetxController {
     selectedColor.value = 0; // Reset warna ke default
     attachedNotes.clear();
   }
+=======
+    if (currentId == null) {
+      await DBHelper.insert(noteData);
+    } else {
+      // Pastikan DBHelper punya fungsi update
+      await DBHelper.update(currentId!, noteData); 
+    }
+>>>>>>> 12943b92d335b3982a9ede8bc4e36113d727909c
 
   @override
   void onClose() {
@@ -167,4 +181,5 @@ class AddNoteController extends GetxController {
     noteController.dispose();
     super.onClose();
   }
+}
 }

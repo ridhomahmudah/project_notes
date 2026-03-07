@@ -101,10 +101,23 @@ class HomeController extends GetxController {
     }
   }
 
-  void removeCategory(String name) {
+  void moveNoteToCategory(int id, String categoryName) async {
+    // 1. Update di Database SQLite
+    // Pastikan di DBHelper kamu punya fungsi updateCategory(id, name)
+    await DBHelper.updateNoteCategory(id, categoryName);
+
+    // 2. Refresh data di aplikasi agar UI terupdate
+    getNotes();
+
+    print("Catatan ID $id sekarang masuk kategori: $categoryName");
+  }
+
+  void removeCategory(String name) async {
     if (name != "Semua") {
-      categories.remove(name);
+      await DBHelper.deleteCategory(name); // Hapus dari SQLite
+      loadCategories(); // Refresh list categories
       if (selectedCategory.value == name) selectedCategory.value = "Semua";
+      getNotes(); // Refresh catatan
     }
   }
 

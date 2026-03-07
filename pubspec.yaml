@@ -40,6 +40,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   get_storage: ^2.1.1
   google_fonts: ^6.2.1
+  archive: ^3.3.7      # Untuk membuat file ZIP
+  path_provider: ^2.1.1 # Untuk mendapatkan lokasi penyimpanan di HP
+  share_plus: ^7.1.0    # Opsional: Untuk langsung membagikan file setelah di-download
 
 dev_dependencies:
   flutter_test:

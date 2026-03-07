@@ -94,6 +94,7 @@ class HomeView extends StatelessWidget {
             ],
           ),
         ),
+<<<<<<< HEAD
         floatingActionButton: Obx(() => homeController.isSelectionMode.value 
           ? const SizedBox.shrink() 
           : Padding(
@@ -109,6 +110,50 @@ class HomeView extends StatelessWidget {
                   backgroundColor: themeController.isDarkMode.value ? Themes.darkPrimary : Themes.lightPrimary,
                   shape: const CircleBorder(),
                   child: const Icon(Icons.add, size: 30, color: Colors.white),
+=======
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: SizedBox(
+            width: 70,
+            height: 70,
+            child: FloatingActionButton(
+              onPressed: () async {
+                // Tunggu user selesai di halaman tambah [cite: 24, 25]
+                await Get.toNamed(Routes.ADD_NOTE);
+                // Refresh data di halaman home [cite: 21]
+                homeController.getNotes();
+              },
+              backgroundColor:
+                  themeController.isDarkMode.value
+                      ? Themes.darkPrimary
+                      : Themes.lightPrimary,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.add, size: 30, color: Colors.white),
+            ),
+          ),
+        ),
+        // Di dalam Scaffold
+        bottomNavigationBar: Obx(() {
+          // Pastikan mode seleksi aktif sebelum menampilkan bar ini
+          if (!homeController.isSelectionMode.value)
+            return const SizedBox.shrink();
+
+          // DEFINISIKAN isDark di sini agar bisa digunakan di bawahnya
+          bool isDark = themeController.isDarkMode.value;
+
+          return Container(
+            height: 70,
+            margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            decoration: BoxDecoration(
+              color: isDark ? Themes.darkPrimary : Colors.white,
+              borderRadius: BorderRadius.circular(30),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+>>>>>>> 12943b92d335b3982a9ede8bc4e36113d727909c
                 ),
               ),
             )),
