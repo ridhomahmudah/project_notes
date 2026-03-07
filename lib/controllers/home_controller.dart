@@ -22,6 +22,7 @@ class HomeController extends GetxController {
   var currentMonthIndex = 0.obs;
   // Ini adalah data asli dari database
   var notesList = <Map<String, dynamic>>[].obs;
+  List<Map<String, dynamic>> get allNotes => notesList;
 
   @override
   void onInit() {
