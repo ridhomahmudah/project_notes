@@ -1,18 +1,16 @@
 import 'dart:io';
+import 'dart:ui'; // Diperlukan untuk ImageFilter
 
 import 'package:amuba_notes/controllers/add_note_controller.dart';
-import 'package:amuba_notes/routes/app_pages.dart';
 import 'package:amuba_notes/services/theme.dart';
 import 'package:amuba_notes/views/add_note_view.dart';
 import 'package:amuba_notes/widgets/home/note_preview.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Tambahkan untuk HapticFeedback
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../controllers/home_controller.dart';
 import '../../controllers/theme_controller.dart';
-// Import helper preview kamu di sini
-// import '../../helpers/note_preview_helper.dart';
 
 class NoteBubbleItem extends StatelessWidget {
   final int id;
@@ -20,7 +18,8 @@ class NoteBubbleItem extends StatelessWidget {
   final String content;
   final String date;
   final String imagePath;
-  final bool isPreview; // Tambahkan parameter ini
+  final bool isPreview;
+  final int? colorValue;
 
   NoteBubbleItem({
     required this.id,
@@ -28,10 +27,11 @@ class NoteBubbleItem extends StatelessWidget {
     required this.content,
     required this.date,
     this.imagePath = '',
-    this.isPreview = false, // Default false
+    this.isPreview = false,
+    this.colorValue, // Opsional
   });
 
-  // --- FUNGSI HELPER HIGHLIGHT (Tetap sama seperti punyamu) ---
+  // --- FUNGSI HELPER HIGHLIGHT ---
   List<TextSpan> _getHighlightedText(
     String text,
     String query,
@@ -73,7 +73,6 @@ class NoteBubbleItem extends StatelessWidget {
     final homeController = Get.find<HomeController>();
     final themeController = Get.find<ThemeController>();
 
-    // Inisialisasi Preview Helper
     final previewHelper = NotePreviewHelper(
       themeController: themeController,
       homeController: homeController,
@@ -97,129 +96,183 @@ class NoteBubbleItem extends StatelessWidget {
     return Obx(() {
       bool isDark = themeController.isDarkMode.value;
       String query = homeController.searchQuery.value;
+      bool isSelected = homeController.isNoteSelected(id);
+      bool selectionMode = homeController.isSelectionMode.value;
 
       return GestureDetector(
-        // 1. Klik Biasa: Buka Edit Note
         onTap: () {
-          if (homeController.isSelectionMode.value) {
+          if (selectionMode) {
             homeController.toggleNoteSelection(id);
           } else {
             if (Get.isDialogOpen ?? false) Get.back();
-
-            // Ambil controller dan isi datanya untuk Mode Edit
             final addNoteController = Get.put(AddNoteController());
             addNoteController.currentId = id;
             addNoteController.titleController.text = title;
             addNoteController.noteController.text = content;
             addNoteController.selectedImagePath.value = imagePath;
-
-            Get.to(
-              () => AddNoteView(),
-              transition: Transition.rightToLeft,
-            );
+            addNoteController.selectedColor.value = colorValue ?? 0;
+            Get.to(() => AddNoteView(), transition: Transition.rightToLeft);
           }
         },
 
-        // 2. KLIK TAHAN: Munculkan Preview
         onLongPress:
             isPreview
                 ? null
                 : () {
-                  HapticFeedback.mediumImpact(); // Getaran HP biar kerasa premium
-                  previewHelper.showNotePreview(
-                    id: id,
-                    context,
-                    title: title,
-                    content: content,
-                    date: date,
-                  );
-                },
+                  HapticFeedback.mediumImpact();
 
-        child: Container(
-          padding: const EdgeInsets.all(12),
+                  if (selectionMode) {
+                    // Jika sedang mode pilih banyak, Long Press berfungsi untuk toggle seleksi juga
+                    homeController.toggleNoteSelection(id);
+                  } else {
+                    // JIKA MODE NORMAL: Munculkan Preview (Inilah yang Anda inginkan)
+                    previewHelper.showNotePreview(
+                      context, // Pastikan urutan argumen sesuai dengan definisi di helper
+                      id: id,
+                      title: title,
+                      content: content,
+                      date: date,
+                    );
+                  }
+                },
+        // Menggunakan AnimatedContainer agar transisi saat dipilih lebih halus
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
+          // Jika dipilih, bubble sedikit membesar (scale up) agar terlihat di atas blur
           decoration: BoxDecoration(
-            color: isDark ? Colors.grey[900] : Colors.white,
             borderRadius: BorderRadius.circular(15),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.grey[200]!,
-            ),
-            // Tambahkan shadow jika sedang mode preview agar melayang
             boxShadow:
-                isPreview
+                isSelected
                     ? [
                       BoxShadow(
-                        color: Colors.black26,
+                        color: Colors.black.withOpacity(0.2),
                         blurRadius: 10,
-                        offset: Offset(0, 5),
+                        spreadRadius: 1,
                       ),
                     ]
-                    : [],
+                    : [BoxShadow(color: Colors.transparent)],
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          child: Stack(
             children: [
-              RichText(
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: GoogleFonts.montserrat(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+              // KONTEN UTAMA BUBBLE
+              Container(
+                width: double.infinity, // Pastikan memenuhi lebar grid
+                height: double.infinity, // Pastikan memenuhi tinggi grid
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color:
+                        isSelected
+                            ? Themes.lightPrimary
+                            : (isDark ? Colors.white10 : Colors.grey[200]!),
+                    width: isSelected ? 2 : 1,
                   ),
-                  children: _getHighlightedText(
-                    title,
-                    query,
-                    isDark,
-                    isTitle: true,
-                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: EdgeInsets.only(right: isSelected ? 25 : 0),
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    if (imagePath.isNotEmpty) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.file(
+                          File(imagePath),
+                          width: double.infinity,
+                          height: isPreview ? 200 : 100,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    Expanded(
+                      child: RichText(
+                        maxLines: 4,
+                        overflow: TextOverflow.ellipsis,
+                        text: TextSpan(
+                          style: GoogleFonts.montserrat(
+                            fontSize: 13,
+                            height: 1.3,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                          children: _getHighlightedText(
+                            content,
+                            homeController.searchQuery.value,
+                            isDark,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    // Di dalam Column NoteBubbleItem, bagian tanggal:
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        // KUNCI UTAMA: Jika colorValue ada, gunakan warna itu dengan opacity
+                        color:
+                            colorValue != null && colorValue != 0
+                                ? Color(colorValue!)
+                                : (isDark
+                                    ? Colors.white10
+                                    : Colors.black.withOpacity(
+                                      0.05,
+                                    )), // Warna default
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        date,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          // Warna teks juga ikut sedikit berubah agar serasi
+                          color:
+                              isDark
+                                      ? Colors.white
+                                      : Colors.black),
+                        
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 8),
-              if (imagePath.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.file(
-                    File(imagePath),
-                    width: double.infinity,
-                    height: isPreview ? 150 : 80, // Jika preview, gambar lebih besar
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(height: 8),
-              ],
-              Expanded(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxHeight: 100),
-                  child: SingleChildScrollView(
-                    // Matikan scroll jika hanya preview kecil
-                    physics:
-                        isPreview
-                            ? const NeverScrollableScrollPhysics()
-                            : const BouncingScrollPhysics(),
-                    child: RichText(
-                      maxLines:
-                          isPreview
-                              ? 10
-                              : 4, // Preview bisa menampilkan lebih banyak baris
-                      overflow: TextOverflow.ellipsis,
-                      text: TextSpan(
-                        style: GoogleFonts.montserrat(
-                          fontSize: 13,
-                          height: 1.4,
-                          color: isDark ? Colors.white70 : Colors.black54,
-                        ),
-                        children: _getHighlightedText(content, query, isDark),
-                      ),
+
+              // ICON CHECKLIST (Hanya muncul saat dipilih)
+              if (isSelected)
+                Positioned(
+                  top: 10, // Jarak dari ATAS (di dalam bubble)
+                  right: 10, // Jarak dari KANAN (di dalam bubble)
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color:
+                          Colors
+                              .white, // Background putih agar icon bulat sempurna
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 22, // Ukuran disesuaikan
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                date,
-                style: GoogleFonts.montserrat(fontSize: 10, color: Colors.grey),
-              ),
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:get_storage/get_storage.dart';
 import '../routes/app_pages.dart';
 import '../services/theme.dart';
 
@@ -49,9 +50,12 @@ class OnboardingView extends StatelessWidget {
                 onPressed: () {
                   // ISI DI SINI: Gunakan GetX untuk pindah ke Home
                   // Pastikan user tidak bisa kembali ke sini (offAll)
-                  Get.offAllNamed(
-                    Routes.HOME,
-                  ); // Ganti dengan nama route yang benar
+                  final box = GetStorage();
+                  // Simpan status bahwa user sudah melihat onboarding
+                  box.write('hasSeenOnboarding', true);
+
+                  // Pindah ke halaman Home
+                  Get.offAllNamed('/home');
                 },
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,

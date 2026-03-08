@@ -35,7 +35,7 @@ class DeleteConfirmationSheet {
             // Ikon/Gambar
             Container(
               padding: const EdgeInsets.all(20),
-              child: Image.asset('images/delete.png', height: 120), // Sesuaikan ukuran
+              child: Image.asset('assets/images/delete.png', height: 120), // Sesuaikan ukuran
             ),
 
             const SizedBox(height: 20),

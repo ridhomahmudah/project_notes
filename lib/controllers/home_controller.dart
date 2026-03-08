@@ -1,7 +1,11 @@
+import 'dart:io';
+
 import 'package:amuba_notes/services/db_helper.dart';
+import 'package:archive/archive_io.dart';
 import 'package:get/get.dart';
-import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class HomeController extends GetxController {
   final List<String> months = [
@@ -169,14 +173,6 @@ class HomeController extends GetxController {
 
     // Tarik data terbaru
     getNotes();
-
-    Get.snackbar(
-      "Berhasil",
-      "Catatan telah dibersihkan",
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-    );
   }
 
   bool isNoteSelected(int id) => selectedNoteIds.contains(id);
@@ -229,4 +225,62 @@ class HomeController extends GetxController {
   void updateSearchQuery(String query) {
     searchQuery.value = query;
   }
+
+  void downloadSelectedNotesAsZip() async {
+  if (selectedNoteIds.isEmpty) return;
+
+  try {
+    // 1. Inisialisasi ZIP Encoder
+    final encoder = ZipFileEncoder();
+    final directory = await getTemporaryDirectory();
+    String timeStamp = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final zipPath = '${directory.path}/AmubaNotes_$timeStamp.zip';
+    
+    encoder.create(zipPath);
+
+    // 2. Loop melalui ID yang dipilih
+    for (int id in selectedNoteIds) {
+      // Cari data note berdasarkan ID
+      final note = notesList.firstWhere((n) => n['id'] == id);
+      String title = note['title'] ?? "Untitled_$id";
+      String content = note['note'] ?? "";
+      String date = note['date'] ?? "";
+      String? imagePath = note['imagePath'];
+
+      // Bersihkan karakter judul agar aman jadi nama file
+      String safeTitle = title.replaceAll(RegExp(r'[^\w\s]+'), '_');
+
+      // 3. Tambahkan File Teks (.txt) untuk setiap catatan
+      final textFile = File('${directory.path}/$safeTitle.txt');
+      await textFile.writeAsString("Judul: $title\nTanggal: $date\n\n$content");
+      encoder.addFile(textFile);
+
+      // 4. Tambahkan Gambar jika ada (beri nama sesuai judul catatan)
+      if (imagePath != null && imagePath.isNotEmpty) {
+        final imageFile = File(imagePath);
+        if (await imageFile.exists()) {
+          // Mendapatkan ekstensi file asli
+          String extension = imagePath.split('.').last;
+          // Menambahkan ke ZIP dengan nama yang unik agar tidak bentrok
+          encoder.addFile(imageFile, '$safeTitle.$extension');
+        }
+      }
+    }
+
+    encoder.close();
+
+    // 5. Trigger Share Sheet untuk menyimpan/mengirim ZIP
+    await Share.shareXFiles(
+      [XFile(zipPath)], 
+      text: 'Ekspor ${selectedNoteIds.length} Catatan AMUBA'
+    );
+
+    // Opsional: Matikan mode seleksi setelah berhasil
+    toggleSelectionMode();
+
+  } catch (e) {
+    print("Error ZIP: $e");
+    Get.snackbar("Error", "Gagal membuat file ZIP");
+  }
+}
 }

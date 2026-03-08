@@ -125,89 +125,88 @@ class CategorySortBar extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // Daftar Kategori
-          Obx(
-            () => Row(
-              children:
-                  homeController.categories.map((category) {
-                    bool isSelected =
-                        homeController.selectedCategory.value == category;
-                    bool isDark = themeController.isDarkMode.value;
+Widget build(BuildContext context) {
+  // Gunakan Obx di level terluar build agar bisa mendeteksi perubahan selectionMode
+  return Obx(() {
+    bool isSelectionActive = homeController.isSelectionMode.value;
 
-                    return GestureDetector(
-                      onTap: () {
-                        homeController.changeCategory(
-                          category,
-                        ); // Ini akan memicu filteredNotes berhitung ulang
-                      },
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 10),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color:
-                              isSelected
-                                  ? (isDark
-                                      ? Themes.darkPrimary
-                                      : Themes.lightPrimary)
-                                  : (isDark
-                                      ? Themes.darkBg
-                                      : Colors.grey[200]),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          category,
-                          style: GoogleFonts.montserrat(
-                            fontSize: 13,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                            color:
-                                isSelected
-                                    ? Colors.white
-                                    : (isDark
-                                        ? Colors.white70
-                                        : Colors.black54),
-                          ),
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 300),
+      // Kurangi opacity jika mode seleksi aktif (efek visual non-aktif)
+      opacity: isSelectionActive ? 0.5 : 1.0,
+      child: IgnorePointer(
+        // Menonaktifkan semua interaksi klik jika mode seleksi aktif
+        ignoring: isSelectionActive,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const BouncingScrollPhysics(),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              // Daftar Kategori
+              Row(
+                children: homeController.categories.map((category) {
+                  bool isSelected =
+                      homeController.selectedCategory.value == category;
+                  bool isDark = themeController.isDarkMode.value;
+
+                  return GestureDetector(
+                    onTap: () {
+                      homeController.changeCategory(category);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 18,
+                        vertical: 9,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? (isDark ? Themes.darkPrimary : Themes.lightPrimary)
+                            : (isDark ? Themes.darkBg : Colors.grey[200]),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        category,
+                        style: GoogleFonts.montserrat(
+                          fontSize: 13,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected
+                              ? Colors.white
+                              : (isDark ? Colors.white70 : Colors.black54),
                         ),
                       ),
-                    );
-                  }).toList(),
-            ),
-          ),
+                    ),
+                  );
+                }).toList(),
+              ),
 
-          // Tombol Tambah (+)
-          Obx(() {
-            bool isDark = themeController.isDarkMode.value;
-            return GestureDetector(
-              onTap: () => _showAddCategorySheet(context),
-
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: isDark ? Themes.darkPrimary : Colors.grey[300],
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.add,
-                  size: 20,
-                  color: isDark ? Colors.white : Colors.black87,
+              // Tombol Tambah (+)
+              GestureDetector(
+                onTap: () => _showAddCategorySheet(context),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: themeController.isDarkMode.value
+                        ? Themes.darkPrimary
+                        : Colors.grey[300],
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 20,
+                    color: themeController.isDarkMode.value
+                        ? Colors.white
+                        : Colors.black87,
+                  ),
                 ),
               ),
-            );
-          }),
-        ],
+            ],
+          ),
+        ),
       ),
     );
-  }
+  });
+}
 }
